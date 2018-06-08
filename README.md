@@ -14,6 +14,7 @@ and the other to controlling the LED strip.  These subsystems communicate over a
 DMX interface is also fully isolated which most of the cheaper DMX interfaces are not.
 
 The PCB has been produced using KiCAD
+
 The Arduino Code is written in the Arduino IDE
 
-Gvain Silver - 8th June 2018
+Gavin Silver - 8th June 2018
