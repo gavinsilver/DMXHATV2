@@ -1,4 +1,4 @@
-## DMXHATV2
+# DMXHATV2
 
 ## DMX Interface to NeoPixel Strip
 
@@ -18,3 +18,4 @@ The PCB has been produced using KiCAD
 The Arduino Code is written in the Arduino IDE
 
 Gavin Silver - 8th June 2018
+Copyright (c) Gavin Silver 2018, all rights reserved
