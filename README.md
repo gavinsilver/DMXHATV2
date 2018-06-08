@@ -1,6 +1,6 @@
-# DMXHATV2
+## DMXHATV2
 
-##DMX Interface to NeoPixel Strip
+## DMX Interface to NeoPixel Strip
 
 DMX to Neopixel board. Voltage Isolated DMX interface with separate Arduino Nano CPU’s for DMX and Neopixel driver
 
