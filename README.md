@@ -1,5 +1,11 @@
 # DMXHATV2
 
+DMX Interface to NeoPixel Strip
+
+This is the first Alpha version of the board and software
+
+Alpha Version of the board can be found at https://oshpark.com/shared_projects/N2rTY4Yk 
+
 ## DMX Interface to NeoPixel Strip
 
 DMX to Neopixel board. Voltage Isolated DMX interface with separate Arduino Nano CPU’s for DMX and Neopixel driver
@@ -18,4 +24,5 @@ The PCB has been produced using KiCAD
 The Arduino Code is written in the Arduino IDE
 
 Gavin Silver - 8th June 2018
+
 Copyright (c) Gavin Silver 2018, all rights reserved

@@ -3,9 +3,9 @@
  * 
  * Now on github.com/gavinsilver/DMXHATV2
  * 
- * V1.0 - 
+ * V1.0 - First Version
+ * V1.1 - Added Debug and fake DMX for testing
  */
-
 
 #include <Conceptinetics.h>
 
@@ -16,10 +16,16 @@
 // If the start address is for example 56, then the channels kept
 // by the dmx_slave object is channel 56-66
 //
-#define DMX_SLAVE_CHANNELS  512 
+#define DMX_SLAVE_CHANNELS  5 
 
 // Configure a DMX slave controller
 DMX_Slave dmx_slave ( DMX_SLAVE_CHANNELS );
+
+#define DEBUG_PIN A7    // Set debug Pin when held low we go into debug mode
+#define FAKE_DMX A6     // Set Pin to use to swith on fake DMX
+boolean debugon=false;  // debug Mode
+boolean fakedmx=false;  // create fake DMX data for testing 
+int fakedmxi=0;         // counter used to cycle through colours
 
 const int ledPinRed = 3;
 const int ledPinGreen = 5;
@@ -32,7 +38,6 @@ volatile byte strobeVal = 0;
 
 int dmx_add = 0;  // 0 - 511
 int dmx_mode = 0; // 0-7
-int jp3 = 0;      // JP3 0=Open 1=Closed
 int val = 0;      // Temp variable used to read input
 
 volatile byte DMXval = 0;
@@ -66,7 +71,7 @@ void setup() {
   pinMode(A4, INPUT_PULLUP);
   pinMode(A5, INPUT_PULLUP);
   pinMode(A6, INPUT); // Note A6 & A7 Analog only and need external pullup resistor
-  pinMode(A7, INPUT);
+  pinMode(A7, INPUT); // Also can only be read with AnalogRead!
 
   // read in DMX address (9bits)
   dmx_add = 0;
@@ -106,7 +111,25 @@ void setup() {
   if (val==LOW) {
       dmx_add |= 1<<8;
     };
+
+    // Read debug Mode
+  val = analogRead(A7); 
+  if (val<500) {
+      debugon = true;
+    }
+    else {
+      debugon = false;
+    }
   
+  // Read fake DMX Mode
+  val = analogRead(A6); 
+  if (val<=500) {
+      fakedmx = true;
+    }
+    else {
+      fakedmx = false;
+    }
+    
   // Enable DMX slave interface and start recording
   // DMX data
   dmx_slave.enable ();  
@@ -119,6 +142,21 @@ void setup() {
   pinMode ( ledPinRed, OUTPUT );
   pinMode ( ledPinGreen, OUTPUT );
   pinMode ( ledPinBlue, OUTPUT );
+
+  // light up LED's if we are in Debug Mode
+  if (debugon == true) {
+      // turn on each RGB led on one at a time to test if we are in debug mode
+      analogWrite(ledPinRed,255);
+      delay(500);
+      analogWrite(ledPinGreen,255);
+      delay(500);
+      analogWrite(ledPinBlue,255);
+      delay(500);
+      // now turn off all the leds,
+      analogWrite(ledPinRed,0);
+      analogWrite(ledPinGreen,0);
+      analogWrite(ledPinBlue,0);
+  }
 }
 
 // SPI interrupt routine
@@ -149,19 +187,59 @@ void loop()
   //
   // EXAMPLE DESCRIPTION
   //
-  // Uses PWM on 3 pins to do RGB in a very crude way.
-  
-  // NOTE:
-  // getChannelValue is relative to the configured startaddress
-  
-  redVal = dmx_slave.getChannelValue(1);
-  analogWrite(ledPinRed,redVal);
-  greenVal = dmx_slave.getChannelValue(2);
-  analogWrite(ledPinGreen,greenVal);
-  blueVal = dmx_slave.getChannelValue(3);
-  analogWrite(ledPinBlue,blueVal);
-  dimVal = dmx_slave.getChannelValue(4);
-  strobeVal = dmx_slave.getChannelValue(5); 
+
+  if (fakedmx == true){
+    // Fake the DMX output to Flashing Light Pink
+    fakedmxi++;
+    if (fakedmxi >= 101) fakedmxi=0; // reset back to start of sequence
+    if (fakedmxi <= 25) {
+      // RED
+      redVal = 255;
+      greenVal = 0;
+      blueVal = 0;
+      dimVal = 255;
+      strobeVal = 0;
+    }
+    if ((fakedmxi > 25) and (fakedmxi <= 50 )) {
+      // GREEN
+      redVal = 0;
+      greenVal = 255;
+      blueVal = 0;
+      dimVal = 255;
+      strobeVal = 0;
+    }
+    if ((fakedmxi > 50) and (fakedmxi <= 75 )) {
+      // BLUE
+      redVal = 0;
+      greenVal = 0;
+      blueVal = 255;
+      dimVal = 255;
+      strobeVal = 0;
+    }
+    if ((fakedmxi > 75) and (fakedmxi <= 100 )) {
+      // WHITE
+      redVal = 255;
+      greenVal = 255;
+      blueVal = 255;
+      dimVal = 255;
+      strobeVal = 0;
+    }
+  }
+  else {
+    // Read the data from the DMX Interface
+    // Uses PWM on 3 pins to do RGB in a very crude way.
+    // NOTE:
+    // getChannelValue is relative to the configured startaddress
+    redVal = dmx_slave.getChannelValue(1);
+    analogWrite(ledPinRed,redVal);
+    greenVal = dmx_slave.getChannelValue(2);
+    analogWrite(ledPinGreen,greenVal);
+    blueVal = dmx_slave.getChannelValue(3);
+    analogWrite(ledPinBlue,blueVal);
+    dimVal = dmx_slave.getChannelValue(4);
+    strobeVal = dmx_slave.getChannelValue(5); 
+  }
+
   delay(20);
   
 }
