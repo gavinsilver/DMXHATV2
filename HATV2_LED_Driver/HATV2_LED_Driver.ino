@@ -15,6 +15,7 @@
 #endif
 
 #define PIN 9
+#define NUM_LEDS 50 // Maximum a 2A 9V Power Supply can deliver all LEDs on White
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -25,7 +26,7 @@
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(8, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -108,10 +109,10 @@ void setup() {
   digitalWrite(SS, HIGH);  // ensure SS stays high for now
   // Put SCK, MOSI, SS pins into output mode
   // also put SCK, MOSI into LOW state, and SS into HIGH state.
-  // Then put SPI hardware into Master mode and turn SPI on
-  SPI.begin ();
   // Slow down the master a bit
   SPI.setClockDivider(SPI_CLOCK_DIV8);
+  // Then put SPI hardware into Master mode and turn SPI on
+  SPI.begin ();
 }
 
 void loop() {
@@ -137,15 +138,6 @@ void loop() {
   if (strobe_val !=0) {
       if ((millis_now - strobe_last_transition_millis) > strobe_ms) {
         // code to change strobe state
-        
-        /* DEBUG
-        if ((millis_now - strobe_last_transition_millis - strobe_ms) > time_debug){ // debug code to work out delay
-          //digitalWrite(ledPin, HIGH);  // debug
-        }
-        else {
-          //digitalWrite(ledPin, LOW);  // debug
-        }*/
-                
         if (strobe_on) {
           strobe_on = false;
           colorWipe(strip.Color(0, 0, 0), 0); // turn everything off
@@ -186,6 +178,7 @@ void loop() {
     strobe_val = transferAndWait(0);
     DMX_last_check_millis = millis_now; // record the last time we read the DMX interface
     digitalWrite(SS, HIGH);
+
     if (debugon) {
       Serial.print("Red Value =");
       Serial.println(redVal);
@@ -233,9 +226,8 @@ void loop() {
       dim_val_last = dim_val;
       strobe_val_last = strobe_val;
     }
-
+   
   }  // end of section reading DMX Values
-
    
 } // end of void loop()
 
@@ -254,7 +246,7 @@ void colorWipe(uint32_t c, uint8_t wait) {
 byte transferAndWait (const byte what)
 {
   byte a = SPI.transfer (what);
-  delayMicroseconds (20);
+  delayMicroseconds (40);  // Wait 40 Microseconds to stop ocassional mis reads at 20 Microseconds
   return a;
 } // end of transferAndWait
 
