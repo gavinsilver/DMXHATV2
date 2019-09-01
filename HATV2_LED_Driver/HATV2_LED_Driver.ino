@@ -3,12 +3,20 @@
  * 
  * Now on github.com/gavinsilver/DMXHATV2
  * 
+ * 
+ * HISTORY
+ * 
+ * V2.0   Initail Version 
+ * V2.1   Added Strand test overide mode when Pin D3 is high
  */
-
+#define VER_ID "2.2"
 // SPI Library
 #include <SPI.h>
 
 // Neopixel Library
+
+
+
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
   #include <avr/power.h>
@@ -36,8 +44,10 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800)
 /// setup global variables for main code segment.
 
 const int debugPin = 2; // Set debug Pin when held low we go into debug mode
+const int strandTestPin = 3; // If Pin is High then just ignore DMX and just run the strand test
 const int ledPin = 7;   // debug  LED pin
 boolean debugon=false;  // debug Mode
+boolean strandteston=false; //sstrand test mode
 
 //long unsigned int time_debug = 2; // ms delay between strobes to turn on LED
 
@@ -83,10 +93,13 @@ void setup() {
   // if debug enabled
   Serial.begin(115200);
   Serial.println("Starting ....");
+  Serial.print("HATV2_LED Ver : ");  
+  Serial.println(VER_ID);  
     
   // Setup Debug Pin (D2) if D2 is held low then debug mode is enabled
   pinMode (ledPin, OUTPUT);
   pinMode(debugPin, INPUT_PULLUP);
+  pinMode(strandTestPin, INPUT_PULLUP);
   if (digitalRead(debugPin) == LOW) // see if we are in debug mode
     {
     debugon = true; // we are in debug Mode
@@ -104,7 +117,11 @@ void setup() {
     {
       Serial.println("Debug is OFF");
     }
-
+  if (digitalRead(strandTestPin) == LOW) // see if we are in strand test mode
+    {
+    strandteston = true; // we are in strand test only mode
+    Serial.println("Strandtest Mode is ON");
+    }
   // Setup the SPI Interface
   digitalWrite(SS, HIGH);  // ensure SS stays high for now
   // Put SCK, MOSI, SS pins into output mode
@@ -116,6 +133,13 @@ void setup() {
 }
 
 void loop() {
+
+  if (strandteston == true) { // if we are in strandtest mode we are only doing a strandtest
+    
+    while (true) {             // do this FOREVER (DMX is ignored)
+      rainbow(30);             // Flowing rainbow cycle along the whole strip with 30ms 
+    }
+  }
   
   if (digitalRead(debugPin) == LOW) // see if we are in debug mode
     {
@@ -259,4 +283,30 @@ long newmap(long x, long in_min, long in_max, long out_min, long out_max)
     return (x - in_min) * (out_max - out_min+1) / (in_max - in_min) + out_min;
   else
     return (x - in_min) * (out_max - out_min-1) / (in_max - in_min) + out_min;
+}
+
+// 
+
+// Rainbow cycle along whole strip. Pass delay time (in ms) between frames.
+void rainbow(int wait) {
+  // Hue of first pixel runs 5 complete loops through the color wheel.
+  // Color wheel has a range of 65536 but it's OK if we roll over, so
+  // just count from 0 to 5*65536. Adding 256 to firstPixelHue each time
+  // means we'll make 5*65536/256 = 1280 passes through this outer loop:
+  for(long firstPixelHue = 0; firstPixelHue < 5*65536; firstPixelHue += 256) {
+    for(int i=0; i<strip.numPixels(); i++) { // For each pixel in strip...
+      // Offset pixel hue by an amount to make one full revolution of the
+      // color wheel (range of 65536) along the length of the strip
+      // (strip.numPixels() steps):
+      int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
+      // strip.ColorHSV() can take 1 or 3 arguments: a hue (0 to 65535) or
+      // optionally add saturation and value (brightness) (each 0 to 255).
+      // Here we're using just the single-argument hue variant. The result
+      // is passed through strip.gamma32() to provide 'truer' colors
+      // before assigning to each pixel:
+      strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
+    }
+    strip.show(); // Update strip with new contents
+    delay(wait);  // Pause for a moment
+  }
 }
